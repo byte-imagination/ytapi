@@ -1,3 +1,5 @@
 ytHost=https://youtrack.url
 ytLogin=login
 ytPassword=password
+ytAPITestProject=ytApiDummyTestProject
+ytAPITestProjectAdminLogin=roger

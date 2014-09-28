@@ -13,7 +13,32 @@ In the src/test/resources directory create a file named youtrack_data.personal.p
 
 # Usage
 
+First, you need to sign in:
+
 ```java
 YouTrack youtrack = new CurrentApi(YOU_TRACK_HOST_URL);
 youtrack.signIn(YOU_TRACK_LOGIN, YOU_TRACK_PASSWORD);
 ```
+Then you can:
+
+- create new project
+
+```java
+youtrack.putProject("projectIdentifier", "Project Name", 1, "root", "My first project created with ytapi.");
+```
+
+- get list of existing projects
+
+```java
+youtrack.getProjects();
+```
+
+- get details of selected project
+
+```java
+youtrack.getProject("projectIdentifier");
+```
+
+- remove existing project
+
+youtrack.deleteProject("projectIdentifier");
