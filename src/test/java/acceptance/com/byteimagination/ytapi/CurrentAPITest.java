@@ -3,6 +3,8 @@ package acceptance.com.byteimagination.ytapi;
 import com.byteimagination.ytapi.CurrentAPI;
 import com.byteimagination.ytapi.YouTrack;
 import com.byteimagination.ytapi.exceptions.InvalidCredentials;
+import com.byteimagination.ytapi.models.Build;
+import com.byteimagination.ytapi.models.BuildBundle;
 import com.byteimagination.ytapi.models.Project;
 import com.byteimagination.ytapi.models.ProjectReference;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
@@ -12,7 +14,10 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Properties;
 
 public class CurrentAPITest {
@@ -59,6 +64,10 @@ public class CurrentAPITest {
     createCurrentAPI().signIn("invalidLogin", "invalidPassword");
   }
 
+  private CurrentAPI createCurrentAPI() {
+    return new CurrentAPI(url);
+  }
+
   @Test(expected = FailingHttpStatusCodeException.class)
   public void doesNotGetProjectThatDoesNotExist() {
     Project projectFound = youTrack.getProject("invalidProjectNameProjectDoesNotExist");
@@ -101,8 +110,39 @@ public class CurrentAPITest {
     assert !found;
   }
 
-  private CurrentAPI createCurrentAPI() {
-    return new CurrentAPI(url);
+  @Test
+  public void createsAndGetsBuildBundle() {
+    String bundleName = properties.getProperty("ytAPITestProject") + " " + randomString() + " " + randomString();
+    String buildName = "1.12";
+    Date assembleDate = new Date();
+    youTrack.puBuildBundle(bundleName);
+    youTrack.putBuild(bundleName, buildName, "Build description goes here.", 6, assembleDate);
+    BuildBundle bundle = youTrack.getBuildBundle(bundleName);
+    assert bundle.name.equals(bundleName);
+    boolean found = false;
+    for (Build build : bundle.builds)
+      if (build.name.equals(buildName))
+        found = true;
+    assert found;
+    Build buildFound = youTrack.getBuild(bundleName, buildName);
+    assert buildFound.name.equals(buildName);
+    assert buildFound.assembleDate.equals("" + assembleDate.getTime());
+    youTrack.deleteBuild(bundleName, buildName);
+    try {
+      youTrack.getBuild(bundleName, buildName);
+      assert false;
+    } catch (Exception ignored) {
+    }
+    youTrack.deleteBuildBundle(bundleName);
+    try {
+      youTrack.getBuildBundle(bundleName);
+      assert false;
+    } catch (Exception ignored) {
+    }
+  }
+
+  private static String randomString() {
+    return new BigInteger(10, new SecureRandom()).toString(32);
   }
 
 }

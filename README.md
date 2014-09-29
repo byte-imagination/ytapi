@@ -11,14 +11,17 @@ Simple library to simplify communication between your tools and YouTrack.
 
 In the src/test/resources directory create a file named youtrack_data.personal.properties based on the sample located in this directory.
 
-# Usage
+## Usage
 
-First, you need to sign in:
+First, you need to 
+
+- sign in:
 
 ```java
 YouTrack youtrack = new CurrentApi(YOU_TRACK_HOST_URL);
 youtrack.signIn(YOU_TRACK_LOGIN, YOU_TRACK_PASSWORD);
 ```
+
 Then you can:
 
 - create new project
@@ -41,4 +44,42 @@ youtrack.getProject("projectIdentifier");
 
 - remove existing project
 
+```java
 youtrack.deleteProject("projectIdentifier");
+```
+
+- create builds bundle
+
+```java
+youtrack.puBuildBundle("bundle name");
+```
+
+- get builds bundle
+
+```java
+youtrack.getBuildBundle("bundle name");
+```
+
+- delete builds bundle
+
+```java
+youtrack.deleteBuildBundle("bundle name");
+```
+
+- create build
+
+```java
+youtrack.putBuild("bundle name", "build name", "build description", 1, new Date().getTime());
+```
+
+- get build
+
+```java
+youtrack.getBuild("bundle name", "build name");
+```
+
+- delete build
+
+```java
+youtrack.deleteBuild("bundle name", "build name");
+```

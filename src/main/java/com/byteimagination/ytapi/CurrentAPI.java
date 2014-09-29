@@ -1,6 +1,8 @@
 package com.byteimagination.ytapi;
 
 import com.byteimagination.ytapi.exceptions.InvalidCredentials;
+import com.byteimagination.ytapi.models.Build;
+import com.byteimagination.ytapi.models.BuildBundle;
 import com.byteimagination.ytapi.models.Project;
 import com.byteimagination.ytapi.models.ProjectReference;
 import com.gargoylesoftware.htmlunit.*;
@@ -9,14 +11,12 @@ import com.gargoylesoftware.htmlunit.xml.XmlPage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class CurrentAPI extends API {
 
@@ -97,6 +97,61 @@ public class CurrentAPI extends API {
     delete("/rest/admin/project/" + id);
   }
 
+  @Override
+  public void puBuildBundle(String bundleName) {
+    String body = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
+      "<buildBundle name=\"" + bundleName + "\"></buildBundle>";
+    put("/rest/admin/customfield/buildBundle", body);
+  }
+
+  @Override
+  public BuildBundle getBuildBundle(String bundleName) {
+    XmlPage page = (XmlPage) get("/rest/admin/customfield/buildBundle/" + bundleName);
+    Document document = Jsoup.parse(page.asXml());
+    Element buildBundleElement = document.select("buildBundle").first();
+    BuildBundle buildBundle = new BuildBundle();
+    buildBundle.name = buildBundleElement.attr("name");
+    Elements buildElements = buildBundleElement.select("build");
+    for (Element buildElement : buildElements) {
+      Build build = parseBuildElement(buildElement);
+      buildBundle.builds.add(build);
+    }
+    return buildBundle;
+  }
+
+  @Override
+  public void deleteBuildBundle(String bundleName) {
+    delete("/rest/admin/customfield/buildBundle/" + bundleName);
+  }
+
+  @Override
+  public void putBuild(String bundleName, String buildName, String description, int colorIndex, Date assembleDate) {
+    put("/rest/admin/customfield/buildBundle/" + bundleName + "/" + buildName,
+      new NameValuePair("description", description),
+      new NameValuePair("colorIndex", "" + colorIndex),
+      new NameValuePair("assembleDate", "" + assembleDate.getTime()));
+  }
+
+  @Override
+  public Build getBuild(String bundleName, String buildName) {
+    XmlPage page = (XmlPage) get("/rest/admin/customfield/buildBundle/" + bundleName + "/" + buildName);
+    Document document = Jsoup.parse(page.asXml());
+    Element buildElement = document.select("build").first();
+    return parseBuildElement(buildElement);
+  }
+
+  @Override
+  public void deleteBuild(String bundleName, String buildName) {
+    delete("/rest/admin/customfield/buildBundle/" + bundleName + "/" + buildName);
+  }
+
+  private Build parseBuildElement(Element buildElement) {
+    Build build = new Build();
+    build.name = buildElement.text();
+    build.assembleDate = buildElement.attr("assembleDate");
+    return build;
+  }
+
   private Page get(String path, NameValuePair... parameters) {
     return performRequest(HttpMethod.GET, path, parameters);
   }
@@ -106,7 +161,11 @@ public class CurrentAPI extends API {
   }
 
   private Page put(String path, NameValuePair... parameters) {
-    return performRequest(HttpMethod.PUT, path, true, parameters);
+    return put(path, null, parameters);
+  }
+
+  private Page put(String path, String body, NameValuePair... parameters) {
+    return performRequest(HttpMethod.PUT, path, true, body, parameters);
   }
 
   private Page delete(String path, NameValuePair... parameters) {
@@ -114,15 +173,19 @@ public class CurrentAPI extends API {
   }
 
   private Page performRequest(HttpMethod method, String path, NameValuePair... parameters) {
-    return performRequest(method, path, false, parameters);
+    return performRequest(method, path, false, null, parameters);
   }
 
   private Page performRequest(HttpMethod method, String path,
-                              boolean appendParametersToUrl, NameValuePair... parameters) {
+                              boolean appendParametersToUrl, String body, NameValuePair... parameters) {
     try {
       URL url = prepareUrl(path, appendParametersToUrl, parameters);
       WebRequest request = new WebRequest(url);
       request.setHttpMethod(method);
+      if (body != null) {
+        request.getAdditionalHeaders().put("Content-Type", "application/xml");
+        request.setRequestBody(body);
+      }
       setParameters(appendParametersToUrl, request, parameters);
       return client.getPage(request);
     } catch (IOException e) {
