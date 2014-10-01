@@ -84,9 +84,6 @@ public class CurrentAPI extends API {
     project.subsystemsUrls = projectElement.attr("subsystemsUrl");
     project.buildsUrl = projectElement.attr("buildsUrl");
     project.versionsUrl = projectElement.attr("versionsUrl");
-    String startingNumber = projectElement.attr("startingNumber");
-    if (startingNumber != null && !startingNumber.isEmpty())
-      project.startingNumber = Integer.valueOf(startingNumber);
     return project;
   }
 

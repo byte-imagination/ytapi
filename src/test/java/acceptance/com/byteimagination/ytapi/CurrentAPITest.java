@@ -98,7 +98,6 @@ public class CurrentAPITest {
     assert projectFound.subsystemsUrls != null;
     assert projectFound.buildsUrl != null;
     assert projectFound.versionsUrl != null;
-    assert projectFound.startingNumber.equals(666);
     youTrack.deleteProject(project.id);
     projects = youTrack.getProjects();
     found = false;

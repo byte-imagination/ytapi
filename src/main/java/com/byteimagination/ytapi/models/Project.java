@@ -10,6 +10,5 @@ public class Project implements Model {
   public String subsystemsUrls;
   public String buildsUrl;
   public String versionsUrl;
-  public Integer startingNumber;
 
 }
