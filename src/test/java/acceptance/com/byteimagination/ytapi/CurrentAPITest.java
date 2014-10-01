@@ -142,7 +142,6 @@ public class CurrentAPITest {
   public void putsAndGetsIssue() throws URISyntaxException {
     Date now = new Date();
     String project = properties.getProperty("ytAPITestProject") + randomString();
-    String user = properties.getProperty("ytLogin");
     youTrack.putProject(project, project, 6, properties.getProperty("ytAPITestProjectAdminLogin"), "description");
     String summary = "Issue summary";
     String description = "The issue '''description'''";
