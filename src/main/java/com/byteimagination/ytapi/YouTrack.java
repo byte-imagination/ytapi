@@ -1,9 +1,6 @@
 package com.byteimagination.ytapi;
 
-import com.byteimagination.ytapi.models.Build;
-import com.byteimagination.ytapi.models.BuildBundle;
-import com.byteimagination.ytapi.models.Project;
-import com.byteimagination.ytapi.models.ProjectReference;
+import com.byteimagination.ytapi.models.*;
 
 import java.util.Collection;
 import java.util.Date;
@@ -28,10 +25,14 @@ public interface YouTrack {
 
   void deleteBuildBundle(String bundleName);
 
-  void putBuild(String bundleName, String buildName, String description, int colorIndex, Date assembleDate);
+  void putBuild(String bundleName, String buildName, String description, Integer colorIndex, Date assembleDate);
 
   Build getBuild(String bundleName, String buildName);
 
   void deleteBuild(String bundleName, String buildName);
+
+  String putIssue(String project, String summary, String description, String permittedGroup);
+
+  Issue getIssue(String id, Boolean wikifyDescription);
 
 }

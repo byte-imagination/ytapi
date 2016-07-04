@@ -3,10 +3,7 @@ package acceptance.com.byteimagination.ytapi;
 import com.byteimagination.ytapi.CurrentAPI;
 import com.byteimagination.ytapi.YouTrack;
 import com.byteimagination.ytapi.exceptions.InvalidCredentials;
-import com.byteimagination.ytapi.models.Build;
-import com.byteimagination.ytapi.models.BuildBundle;
-import com.byteimagination.ytapi.models.Project;
-import com.byteimagination.ytapi.models.ProjectReference;
+import com.byteimagination.ytapi.models.*;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -15,6 +12,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.net.URISyntaxException;
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Date;
@@ -78,7 +76,7 @@ public class CurrentAPITest {
   public void getsCreatesAndDeletesProjects() {
     Project project = new Project();
     project.id = properties.getProperty("ytAPITestProject");
-    project.name = properties.getProperty("ytAPITestProject") + "Name";
+    project.name = properties.getProperty("ytAPITestProject") + " Name";
     project.lead = properties.getProperty("ytAPITestProjectAdminLogin");
     project.description = "project description goes here";
     Collection<ProjectReference> projects = youTrack.getProjects();
@@ -111,7 +109,7 @@ public class CurrentAPITest {
   }
 
   @Test
-  public void createsAndGetsBuildBundle() {
+  public void createsGetsAndDeletesBuildBundle() {
     String bundleName = properties.getProperty("ytAPITestProject") + " " + randomString() + " " + randomString();
     String buildName = "1.12";
     Date assembleDate = new Date();
@@ -139,6 +137,37 @@ public class CurrentAPITest {
       assert false;
     } catch (Exception ignored) {
     }
+  }
+
+  @Test
+  public void putsAndGetsIssue() throws URISyntaxException {
+    Date now = new Date();
+    String project = properties.getProperty("ytAPITestProject") + randomString();
+    String user = properties.getProperty("ytLogin");
+    youTrack.putProject(project, project, 6, properties.getProperty("ytAPITestProjectAdminLogin"), "description");
+    String summary = "Issue summary";
+    String description = "The issue '''description'''";
+    String permittedGroup = "All Users";
+    String issueId = youTrack.putIssue(project, summary, description, permittedGroup);
+    Issue issue = youTrack.getIssue(issueId, false);
+    Issue wikifiedIssue = youTrack.getIssue(issueId, true);
+    assert issue.id.equals(issueId);
+    assert issue.projectShortName.equals(project);
+    assert issue.numberInProject.equals(6L);
+    assert issue.summary.equals(summary);
+    assert issue.description.equals(description);
+    assert issue.created.before(now);
+    assert issue.updated.before(now);
+    assert issue.updaterName.equals(properties.getProperty("ytAPITestProjectAdminLogin"));
+    assert issue.resolved == null;
+    assert issue.reporterName.equals(properties.getProperty("ytAPITestProjectAdminLogin"));
+    assert issue.commentsCount.equals(0L);
+    assert issue.votes.equals(0L);
+    assert issue.comments.isEmpty();
+    assert issue.fields.size() > 0;
+    String wikifiedDescription = "<div class=\"wiki text\">" + description.replaceFirst("'''", "<strong>").replaceFirst("'''", "</strong>") + "</div>";
+    assert wikifiedIssue.description.equals(wikifiedDescription);
+    youTrack.deleteProject(project);
   }
 
   private static String randomString() {

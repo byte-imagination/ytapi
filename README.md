@@ -13,9 +13,9 @@ In the src/test/resources directory create a file named youtrack_data.personal.p
 
 ## Usage
 
-First, you need to 
+First, you need to:
 
-- sign in:
+- sign in
 
 ```java
 YouTrack youtrack = new CurrentApi(YOU_TRACK_HOST_URL);
@@ -82,4 +82,16 @@ youtrack.getBuild("bundle name", "build name");
 
 ```java
 youtrack.deleteBuild("bundle name", "build name");
+```
+
+- put issue
+
+```java
+youtrack.putIssue("projectIdentifier", "issue summary", "The issue '''description'''.", "permitted group");
+```
+
+- get issue
+
+```java
+youtrack.getIssue("issueId", true);
 ```

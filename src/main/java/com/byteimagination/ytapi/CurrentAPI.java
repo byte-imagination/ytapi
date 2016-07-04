@@ -1,10 +1,7 @@
 package com.byteimagination.ytapi;
 
 import com.byteimagination.ytapi.exceptions.InvalidCredentials;
-import com.byteimagination.ytapi.models.Build;
-import com.byteimagination.ytapi.models.BuildBundle;
-import com.byteimagination.ytapi.models.Project;
-import com.byteimagination.ytapi.models.ProjectReference;
+import com.byteimagination.ytapi.models.*;
 import com.gargoylesoftware.htmlunit.*;
 import com.gargoylesoftware.htmlunit.util.NameValuePair;
 import com.gargoylesoftware.htmlunit.xml.XmlPage;
@@ -125,10 +122,10 @@ public class CurrentAPI extends API {
   }
 
   @Override
-  public void putBuild(String bundleName, String buildName, String description, int colorIndex, Date assembleDate) {
+  public void putBuild(String bundleName, String buildName, String description, Integer colorIndex, Date assembleDate) {
     put("/rest/admin/customfield/buildBundle/" + bundleName + "/" + buildName,
       new NameValuePair("description", description),
-      new NameValuePair("colorIndex", "" + colorIndex),
+      new NameValuePair("colorIndex", colorIndex.toString()),
       new NameValuePair("assembleDate", "" + assembleDate.getTime()));
   }
 
@@ -143,6 +140,75 @@ public class CurrentAPI extends API {
   @Override
   public void deleteBuild(String bundleName, String buildName) {
     delete("/rest/admin/customfield/buildBundle/" + bundleName + "/" + buildName);
+  }
+
+  @Override
+  public String putIssue(String project, String summary, String description, String permittedGroup) {
+    Page page = put("/rest/issue",
+      new NameValuePair("project", project),
+      new NameValuePair("summary", summary),
+      new NameValuePair("description", description),
+      new NameValuePair("permittedGroup", permittedGroup));
+    String location = page.getWebResponse().getResponseHeaderValue("Location");
+    return location.substring(location.lastIndexOf("/") + 1, location.length());
+  }
+
+  @Override
+  public Issue getIssue(String id, Boolean wikifyDescription) {
+    XmlPage page = (XmlPage) get("/rest/issue/" + id,
+      new NameValuePair("wikifyDescription", wikifyDescription.toString()));
+    Document document = Jsoup.parse(page.asXml());
+    Element issueElement = document.select("issue").first();
+    Issue issue = new Issue();
+    issue.id = issueElement.attr("id");
+    issue.projectShortName = issueElement.select("field[name=projectShortName]").text();
+    issue.numberInProject = Long.valueOf(issueElement.select("field[name=numberInProject]").text());
+    issue.description = issueElement.select("field[name=description]").text();
+    issue.created = new Date(Long.valueOf(issueElement.select("field[name=created]").text()));
+    issue.updated = new Date(Long.valueOf(issueElement.select("field[name=updated]").text()));
+    issue.updaterName = issueElement.select("field[name=updaterName]").text();
+    if (!issueElement.select("field[name=resolved]").isEmpty())
+      issue.resolved = new Date(Long.valueOf(issueElement.select("field[name=resolved]").text()));
+    issue.reporterName = issueElement.select("field[name=reporterName]").text();
+    issue.summary = issueElement.select("field[name=summary]").text();
+    issue.commentsCount = Long.valueOf(issueElement.select("field[name=commentsCount]").text());
+    issue.votes = Long.valueOf(issueElement.select("field[name=votes]").text());
+    issue.permittedGroup = issueElement.select("field[name=permittedGroup]").text();
+    parseComments(issue, issueElement);
+    parseFields(issue, issueElement);
+    return issue;
+  }
+
+  private void parseComments(Issue issue, Element issueElement) {
+    Elements commentElements = issueElement.select("comments");
+    for (Element commentElement : commentElements) {
+      IssueComment comment = new IssueComment();
+      comment.id = commentElement.attr("id");
+      comment.author = commentElement.attr("author");
+      comment.issueId = commentElement.attr("issueId");
+      comment.deleted = Boolean.valueOf(commentElement.attr("deleted"));
+      comment.text = commentElement.attr("text");
+      comment.shownForIssueAuthor = Boolean.valueOf(commentElement.attr("shownForIssueAuthor"));
+      comment.created = new Date(Long.valueOf(commentElement.attr("created")));
+      issue.comments.add(comment);
+    }
+  }
+
+  private void parseFields(Issue issue, Element issueElement) {
+    Elements fieldElements = issueElement.select("field");
+    for (Element fieldElement : fieldElements) {
+      IssueField field = new IssueField();
+      field.name = fieldElement.attr("name");
+      Elements valueElements = fieldElement.select("value");
+      for (Element valueElement : valueElements) {
+        IssueFieldValue value = new IssueFieldValue();
+        value.role = valueElement.attr("role");
+        value.type = valueElement.attr("type");
+        value.value = valueElement.text();
+        field.values.add(value);
+      }
+      issue.fields.add(field);
+    }
   }
 
   private Build parseBuildElement(Element buildElement) {
